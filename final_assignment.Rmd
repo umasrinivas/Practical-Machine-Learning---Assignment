@@ -1,0 +1,136 @@
+---
+title: "Activity Prediction"
+author: "Uma Srinivas Majji"
+date: "10/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
+
+## Loading Packages
+```{r echo=TRUE, results='hide', message=FALSE,warning=FALSE}
+library(caret)
+library(dplyr)
+library(rpart)
+library(rpart.plot)
+library(rattle)
+library(randomForest)
+library(corrplot)
+```
+
+## Data Preparation
+
+```{r}
+# set the url for the download
+urlTrain <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+urlValid <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+# download the datasets
+training <- read.csv(url(urlTrain))
+validation <- read.csv(url(urlValid))
+training$classe <- as.factor(training$classe)
+
+# create a partition with the training dataset
+inTrain <- createDataPartition(y=training$classe,p=0.7,list=FALSE)
+trainSet <- training[inTrain,]
+testSet <- training[-inTrain,]
+dim(trainSet)
+dim(testSet)
+
+# remove variables with near zero variance
+NZV <- nearZeroVar(trainSet)
+trainSet <- trainSet[,-NZV]
+testSet <- testSet[,-NZV]
+
+# remove variables that are mostly NA
+allNA <- sapply(trainSet,function(x)mean(is.na(x)))>0.95
+trainSet <- trainSet[,allNA==FALSE]
+testSet <- testSet[,allNA==FALSE]
+
+# remove identification only variables
+trainSet <- trainSet[,-(1:5)]
+testSet <- testSet[,-(1:5)]
+dim(trainSet)
+dim(testSet)
+```
+
+## Correlation Analysis
+
+```{r}
+#library(corrplot)
+corMatrix <- cor(trainSet[,-54])
+corrplot(corMatrix,order="FPC",method="color",type="lower",tl.cex=0.8,tl.col=rgb(0,0,0))
+```
+
+
+## Prediction Model building
+
+### Method - Random Forest
+
+```{r}
+# model fit
+set.seed(12345)
+controlRF <- trainControl(method="cv",number=3,verboseIter=FALSE)
+modFitRandForest <- train(classe~.,data=trainSet,method="rf",trControl=controlRF)
+modFitRandForest$finalModel
+
+# prediction on test set
+predRandForest <- predict(modFitRandForest,testSet)
+confMatRandForest <- confusionMatrix(predRandForest,testSet$classe)
+
+# plot matrix results
+plot(confMatRandForest$table,col=confMatRandForest$byClass,
+     main=paste("Random Forest - Accuracy =",round(confMatRandForest$overall['Accuracy'],4)))
+```
+
+### Method - Decision Trees
+
+```{r}
+# model fit
+set.seed(12345)
+modFitDecTree <- rpart(classe~.,data=trainSet,method="class")
+fancyRpartPlot(modFitDecTree)
+
+# prediction on test data set
+predDecTree <- predict(modFitDecTree,newdata=testSet,type="class")
+confMatDecTree <- confusionMatrix(predDecTree,testSet$classe)
+confMatDecTree
+
+# plot matrix results
+plot(confMatDecTree$table,col=confMatDecTree$byClass,
+     main = paste("Decision Tree - Accuracy =",round(confMatDecTree$overall['Accuracy'], 4)))
+```
+
+### Method - Generalized Boosted Model
+
+```{r}
+
+# model fit
+set.seed(12345)
+controlGBM <- trainControl(method="repeatedcv",number=5,repeats=1)
+modFitGBM <- train(classe~.,data=trainSet,method="gbm",trControl=controlGBM,verbose=F)
+modFitGBM$finalModel
+
+# prediction on test data set
+predGBM <- predict(modFitGBM,newdata=testSet)
+confMatGBM <- confusionMatrix(predGBM,testSet$classe)
+confMatGBM
+
+# plot matrix results
+plot(confMatGBM$table,col=confMatGBM$byClass,
+     main=paste("GBM - Accuracy =",round(confMatGBM$overall['Accuracy'],4)))
+```
+
+## Applying best fit model
+
+```{r}
+# Applying the Selected Model to the Validation Data
+predValidation <- predict(modFitRandForest,validation)
+predValidation
+```
