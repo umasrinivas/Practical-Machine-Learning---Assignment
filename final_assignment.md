@@ -88,7 +88,7 @@ corMatrix <- cor(trainSet[,-54])
 corrplot(corMatrix,order="FPC",method="color",type="lower",tl.cex=0.8,tl.col=rgb(0,0,0))
 ```
 
-![](final_assignment_files/figure-markdown_github/unnamed-chunk-3-1.png)
+![](figure/unnamed-chunk-3-1.png)
 
 Prediction Model building
 -------------------------
@@ -129,7 +129,7 @@ plot(confMatRandForest$table,col=confMatRandForest$byClass,
      main=paste("Random Forest - Accuracy =",round(confMatRandForest$overall['Accuracy'],4)))
 ```
 
-![](final_assignment_files/figure-markdown_github/unnamed-chunk-4-1.png)
+![](figure/unnamed-chunk-4-1.png)
 
 ### Method - Decision Trees
 
@@ -142,7 +142,7 @@ fancyRpartPlot(modFitDecTree)
 
     ## Warning: labs do not fit even at cex 0.15, there may be some overplotting
 
-![](final_assignment_files/figure-markdown_github/unnamed-chunk-5-1.png)
+![](figure/unnamed-chunk-5-1.png)
 
 ``` r
 # prediction on test data set
@@ -190,7 +190,7 @@ plot(confMatDecTree$table,col=confMatDecTree$byClass,
      main = paste("Decision Tree - Accuracy =",round(confMatDecTree$overall['Accuracy'], 4)))
 ```
 
-![](final_assignment_files/figure-markdown_github/unnamed-chunk-5-2.png)
+![](figure/unnamed-chunk-5-2.png)
 
 ### Method - Generalized Boosted Model
 
@@ -252,7 +252,7 @@ plot(confMatGBM$table,col=confMatGBM$byClass,
      main=paste("GBM - Accuracy =",round(confMatGBM$overall['Accuracy'],4)))
 ```
 
-![](final_assignment_files/figure-markdown_github/unnamed-chunk-6-1.png)
+![](figure/unnamed-chunk-6-1.png)
 
 Applying best fit model
 -----------------------
